@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - FiveM Scripts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0a0c15 0%, #0a0a0a 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        .container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+        h1 { font-family: 'Orbitron', monospace; text-align: center; margin-bottom: 2rem; background: linear-gradient(135deg, #fff, #4caf50); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .login-box {
+            max-width: 400px; margin: 5rem auto; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            padding: 2.5rem; border-radius: 20px; text-align: center; border: 1px solid rgba(76,175,80,0.3);
+        }
+        .login-box input { width: 100%; padding: 1rem; margin: 1rem 0; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; }
+        .login-box button { width: 100%; padding: 1rem; background: linear-gradient(135deg, #4caf50, #2196f3); border: none; border-radius: 10px; color: #fff; font-weight: 600; cursor: pointer; }
+        .admin-panel { display: none; }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .tab-btn { padding: 0.8rem 1.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; color: #fff; cursor: pointer; }
+        .tab-btn.active, .tab-btn:hover { background: linear-gradient(135deg, #4caf50, #2196f3); }
+        .tab-content { display: none; background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 20px; }
+        .tab-content.active { display: block; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; }
+        .btn-primary { background: linear-gradient(135deg, #4caf50, #2196f3); padding: 0.8rem 2rem; border: none; border-radius: 50px; color: #fff; font-weight: 600; cursor: pointer; }
+        .delete-btn { background: linear-gradient(135deg, #ff5252, #ff1744); padding: 0.5rem 1rem; border: none; border-radius: 8px; color: #fff; cursor: pointer; }
+        .product-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(255,255,255,0.05); margin-bottom: 0.5rem; border-radius: 10px; }
+        .message { margin-top: 1rem; padding: 0.8rem; border-radius: 10px; }
+        .message.success { background: rgba(76,175,80,0.2); color: #4caf50; }
+        .message.error { background: rgba(255,82,82,0.2); color: #ff5252; }
+        .back-link { display: inline-block; margin-top: 1rem; color: #4caf50; text-decoration: none; }
+        .order-card { background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1rem; }
+        .refresh-btn { background: #4caf50; padding: 0.3rem 0.8rem; border: none; border-radius: 5px; color: #fff; cursor: pointer; margin-left: 1rem; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-crown"></i> Admin Dashboard</h1>
+        
+        <div id="loginBox" class="login-box">
+            <i class="fas fa-user-shield" style="font-size: 3rem; color: #4caf50;"></i>
+            <h2>Admin Login</h2>
+            <input type="password" id="adminPass" placeholder="Enter password">
+            <button onclick="login()">Login <i class="fas fa-arrow-right"></i></button>
+            <div id="loginError" style="color:#ff5252; margin-top:1rem;"></div>
+            <a href="index.html" class="back-link">← Back to Shop</a>
+        </div>
+        
+        <div id="adminPanel" class="admin-panel">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('add')">➕ Add Product</button>
+                <button class="tab-btn" onclick="showTab('list')">📋 Manage Products</button>
+                <button class="tab-btn" onclick="showTab('orders')">🛒 Orders</button>
+                <button class="tab-btn" onclick="logout()">🚪 Logout</button>
+            </div>
+            
+            <div id="tabAdd" class="tab-content active">
+                <h2 style="margin-bottom: 1.5rem;">Add New Product</h2>
+                <form id="productForm">
+                    <div class="form-group"><label>Product Name *</label><input type="text" id="name" required placeholder="e.g., QBCore Economy"></div>
+                    <div class="form-group"><label>Framework</label><select id="framework"><option>QBCore</option><option>ESX</option><option>Both</option></select></div>
+                    <div class="form-group"><label>Category</label><select id="category"><option>economy</option><option>jobs</option><option>vehicles</option><option>police</option><option>housing</option></select></div>
+                    <div class="form-group"><label>Price ($) *</label><input type="number" id="price" step="0.01" required></div>
+                    <div class="form-group"><label>Stock</label><input type="number" id="stock" value="999"></div>
+                    <div class="form-group"><label>Description *</label><textarea id="description" rows="3" required></textarea></div>
+                    <div class="form-group"><label>Image URL</label><input type="text" id="image" value="https://placehold.co/300x200/4caf50/white?text=Script"></div>
+                    <div class="form-group"><label>Download Link</label><input type="text" id="downloadUrl" value="#"></div>
+                    <div class="form-group"><label>Features</label><input type="text" id="features" placeholder="Optimized, Easy Install"></div>
+                    <button type="submit" class="btn-primary">➕ Add Product</button>
+                </form>
+                <div id="addMessage"></div>
+            </div>
+            
+            <div id="tabList" class="tab-content">
+                <h2 style="margin-bottom: 1rem;">
+                    Manage Products 
+                    <button class="refresh-btn" onclick="loadProductsList()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </h2>
+                <div id="productsList">Loading...</div>
+                <p style="margin-top: 1rem; color: #aaa;"><i class="fas fa-info-circle"></i> Click "Delete" to remove any product</p>
+                <p style="margin-top: 0.5rem; color: #ff9800;"><i class="fas fa-exclamation-triangle"></i> Note: Products are stored in your browser. Other people will see their own products.</p>
+            </div>
+            
+            <div id="tabOrders" class="tab-content">
+                <h2 style="margin-bottom: 1rem;">Recent Orders</h2>
+                <div id="ordersList">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASS = "admin123";
+        
+        function login() {
+            const pass = document.getElementById('adminPass').value;
+            if (pass === ADMIN_PASS) {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadProductsList();
+                loadOrders();
+            } else {
+                document.getElementById('loginError').textContent = '❌ Wrong password!';
+            }
+        }
+        
+        function logout() {
+            sessionStorage.removeItem('adminLoggedIn');
+            document.getElementById('loginBox').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            if (tab === 'list') loadProductsList();
+            if (tab === 'orders') loadOrders();
+        }
+        
+        function loadProductsList() {
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            const container = document.getElementById('productsList');
+            if (!container) return;
+            
+            if (products.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:2rem;">📦 No products yet. Add your first product!</div>';
+                return;
+            }
+            
+            container.innerHTML = products.map(p => `
+                <div class="product-item">
+                    <div>
+                        <strong>${p.name}</strong><br>
+                        💰 $${p.price} | 🏷️ ${p.category} | 🔧 ${p.framework}
+                    </div>
+                    <button class="delete-btn" onclick="deleteProduct(${p.id})">🗑️ Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        function deleteProduct(id) {
+            if (!confirm('⚠️ Are you sure you want to delete this product? This cannot be undone.')) return;
+            
+            let products = JSON.parse(localStorage.getItem('products') || '[]');
+            const productName = products.find(p => p.id === id)?.name || 'Product';
+            products = products.filter(p => p.id !== id);
+            
+            localStorage.setItem('products', JSON.stringify(products));
+            localStorage.setItem('productsVersion', Date.now().toString());
+            
+            loadProductsList();
+            showMessage(`✅ ${productName} deleted successfully!`, 'success');
+        }
+        
+        function loadOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            const container = document.getElementById('ordersList');
+            if (!container) return;
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:2rem;">📭 No orders yet</div>';
+                return;
+            }
+            
+            container.innerHTML = orders.reverse().map(o => `
+                <div class="order-card">
+                    <strong>Order #${o.id}</strong><br>
+                    📅 ${new Date(o.date).toLocaleString()}<br>
+                    💰 Total: $${o.total.toFixed(2)}<br>
+                    📦 Items: ${o.items.map(i => `${i.name} x${i.quantity}`).join(', ')}
+                </div>
+            `).join('');
+        }
+        
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById('addMessage');
+            if (msgDiv) {
+                msgDiv.innerHTML = `<div class="message ${type}">${msg}</div>`;
+                setTimeout(() => msgDiv.innerHTML = '', 3000);
+            } else {
+                alert(msg);
+            }
+        }
+        
+        // Add Product Form
+        document.getElementById('productForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            let products = JSON.parse(localStorage.getItem('products') || '[]');
+            const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+            const features = document.getElementById('features').value.split(',').map(f => f.trim()).filter(f => f);
+            
+            const newProduct = {
+                id: newId,
+                name: document.getElementById('name').value,
+                framework: document.getElementById('framework').value,
+                category: document.getElementById('category').value,
+                price: parseFloat(document.getElementById('price').value),
+                stock: parseInt(document.getElementById('stock').value),
+                description: document.getElementById('description').value,
+                image: document.getElementById('image').value,
+                downloadUrl: document.getElementById('downloadUrl').value,
+                features: features.length ? features : ["Premium Script"]
+            };
+            
+            products.push(newProduct);
+            localStorage.setItem('products', JSON.stringify(products));
+            localStorage.setItem('productsVersion', Date.now().toString());
+            
+            document.getElementById('productForm').reset();
+            showMessage(`✅ ${newProduct.name} added successfully!`, 'success');
+            
+            if (document.getElementById('tabList').classList.contains('active')) {
+                loadProductsList();
+            }
+        });
+        
+        // Auto login if already logged in
+        if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadProductsList();
+            loadOrders();
+        }
+    </script>
+</body>
+</html>
